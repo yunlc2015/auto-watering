@@ -1,16 +1,19 @@
 /**
  * 物联网自动浇花应用
  * 
+ * 本程序可不受限制的用于学习，商业用途请联系作者。
+ * 
+ * 产品链接：https://www.xpstem.com/product/auto-watering
  * Author: Billy Zhang（vx: billyzh）
  */
 #include "wifi_configuration_ex.h"
 
-#include <cJSON.h>
 #include <nvs.h>
 #include <nvs_flash.h>
 #include <Arduino.h>
 #include <HTTPClient.h>
 #include <WiFi.h>
+#include <ArduinoJson.h>
 
 #include "src/framework/sys/log.h"
 #include "src/framework/sys/settings.h"
@@ -69,9 +72,10 @@ void WifiConfigurationEx::StartWebServer() {
         std::string ssid = std::string(web_server_->arg("ssid").c_str());
         std::string password = std::string(web_server_->arg("password").c_str());
         std::string serialno = std::string(web_server_->arg("serialno").c_str());  //序列号
+        std::string platform_token = std::string(web_server_->arg("platform_token").c_str());  //序列号
         int workmode = web_server_->arg("workmode").toInt();     //工作模式
 
-        if (ssid=="" || password=="" || serialno=="") {
+        if (ssid=="" || password=="" || serialno=="" || platform_token=="") {
             web_server_->send(200, "application/json", "{\"success\":false,\"error\":\"参数不能为空\"}");
             return;
         }
@@ -82,7 +86,7 @@ void WifiConfigurationEx::StartWebServer() {
             return;
         }
 
-        bool read_config = ReadProductConfig(serialno, workmode);
+        bool read_config = ReadProductConfig(platform_token, serialno, workmode);
         WiFi.disconnect();
 
         if (!read_config) {
@@ -119,17 +123,28 @@ void WifiConfigurationEx::StartWebServer() {
     Log::Info(TAG, "WebServer started.");
 }
 
-bool WifiConfigurationEx::ReadProductConfig(const std::string& serialno, int workmode) {
+bool WifiConfigurationEx::ReadProductConfig(const std::string& platform_token, const std::string& serialno, int workmode) {
     
     Log::Info(TAG, "read product config, serialno: %s", serialno.c_str());
     
     // 获取项目配置信息
-    std::string config_url = "https://www.xpstem.com/app/iot/project/productconfig?chipid=" + SystemInfo::GetMacAddress2() + "&serialno=" + serialno;
+    std::string config_url = PLATFORM_API_BASE "/app/config/get";
     Log::Info(TAG, "access: %s", config_url.c_str());
 
     HTTPClient http;
+    http.addHeader("Authorization", String("Bearer ")+platform_token.c_str());
+
     http.begin(String(config_url.c_str()));
-    int status_code = http.GET();
+
+    JsonDocument payloadDoc;
+    payloadDoc["appId"] = PLATFORM_APP_ID;
+    payloadDoc["model"] = PRODUCT_MODEL;
+    payloadDoc["chipId"] = SystemInfo::GetMacAddress2().c_str();
+    payloadDoc["serialno"] = serialno.c_str();
+    String payloadStr;
+    serializeJson(payloadDoc, payloadStr);
+
+    int status_code = http.POST(payloadStr);
     if (status_code != 200) {
         Log::Warn(TAG, "read product config failure, status code: %d", status_code);
         return false;
@@ -138,25 +153,23 @@ bool WifiConfigurationEx::ReadProductConfig(const std::string& serialno, int wor
     String body = http.getString();
     http.end();
 
-    // 解析
-    cJSON *root_node = cJSON_Parse(body.c_str());
-    if (!root_node) {
-        const char *error = cJSON_GetErrorPtr();
-        Log::Error(TAG, "解析配置错误，%s", error);
+    JsonDocument respDoc;
+    if (deserializeJson(respDoc, body)) {
+        Log::Error(TAG, "解析配置错误");
         return false;
     }
 
-    int err_code = cJSON_GetObjectItem(root_node, "errCode")->valueint;
+    int err_code = respDoc["errCode"];
     if (err_code!=0) {
-        std::string err_msg = cJSON_GetObjectItem(root_node, "errMsg")->valuestring;
+        std::string err_msg = respDoc["errMsg"];
         Log::Error(TAG, "获取配置失败，%s", err_msg.c_str());
         return false;
     }
 
-    cJSON *data_node = cJSON_GetObjectItem(root_node, "data");
+    JsonObject data_node = respDoc["data"].as<JsonObject>();
 
     WateringConfig& config = WateringConfig::GetInstance();
-    config.Update(serialno, workmode, data_node);
+    config.Update(platform_token, serialno, workmode, data_node);
     
     Log::Info(TAG, "write to ns:config successfully.");
 

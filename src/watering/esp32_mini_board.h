@@ -1,6 +1,9 @@
 /**
  * 物联网自动浇花应用
  * 
+ * 本程序可不受限制的用于学习，商业用途请联系作者。
+ * 
+ * 产品链接：https://www.xpstem.com/product/auto-watering
  * Author: Billy Zhang（vx: billyzh）
  */
 #ifndef _ESP32_MINI_BOARD_H
