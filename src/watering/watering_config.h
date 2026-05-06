@@ -70,6 +70,11 @@ public:
         settings.SetString("mq_password", mqtt_password);
     }
     
+    void Reset() {
+        Settings settings("config", true);
+        settings.EraseAll();
+    }
+
 private:
     WateringConfig() {
         Settings settings("config");

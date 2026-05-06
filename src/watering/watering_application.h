@@ -23,8 +23,7 @@ public:
     
     void ShowWifiConfigHit(const std::string& ssid, const std::string& config_url, const std::string& mac_address) override;
 
-    const std::string& GetAppName() const override { return "AutoWatering"; }
-    const std::string& GetAppVersion() const override { return "1.0.0"; }
+    const std::string GetAppVersion() const override { return "1.0.0"; }
 
 protected:
     void OnInit() override;

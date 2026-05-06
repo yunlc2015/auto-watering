@@ -21,6 +21,7 @@
 #include "src/framework/sys/system_info.h"
 #include "wifi_configuration_res.h"
 #include "watering_config.h"
+#include "watering_application.h"
 
 #define TAG "WifiConfigurationEx"
 
@@ -86,10 +87,10 @@ void WifiConfigurationEx::StartWebServer() {
             return;
         }
 
-        bool read_config = ReadProductConfig(platform_token, serialno, workmode);
+        bool status = ActivateProduct(platform_token, serialno, workmode);
         WiFi.disconnect();
 
-        if (!read_config) {
+        if (!status) {
             web_server_->send(200, "application/json", "{\"success\":false,\"error\":\"获取产品配置失败！\"}");
             return;
         }
@@ -123,30 +124,34 @@ void WifiConfigurationEx::StartWebServer() {
     Log::Info(TAG, "WebServer started.");
 }
 
-bool WifiConfigurationEx::ReadProductConfig(const std::string& platform_token, const std::string& serialno, int workmode) {
+bool WifiConfigurationEx::ActivateProduct(const std::string& platform_token, const std::string& serialno, int workmode) {
     
-    Log::Info(TAG, "read product config, serialno: %s", serialno.c_str());
+    Log::Info(TAG, "activate product, token: %s, serialno: %s", platform_token.c_str(), serialno.c_str());
     
     // 获取项目配置信息
     std::string config_url = PLATFORM_API_BASE "/product/activate";
     Log::Info(TAG, "access: %s", config_url.c_str());
 
     HTTPClient http;
-    http.addHeader("Authorization", String("Bearer ")+platform_token.c_str());
-
     http.begin(String(config_url.c_str()));
+
+    http.setAuthorizationType("Bearer");
+    http.setAuthorization(platform_token.c_str());
 
     JsonDocument payloadDoc;
     payloadDoc["appId"] = PLATFORM_APP_ID;
     payloadDoc["model"] = PRODUCT_MODEL;
     payloadDoc["chipId"] = SystemInfo::GetMacAddress2().c_str();
     payloadDoc["serialno"] = serialno.c_str();
+    payloadDoc["version"] = Application::GetInstance().GetAppVersion().c_str();
     String payloadStr;
     serializeJson(payloadDoc, payloadStr);
 
+    http.addHeader("Content-Type", "application/json");
+
     int status_code = http.POST(payloadStr);
     if (status_code != 200) {
-        Log::Warn(TAG, "read product config failure, status code: %d", status_code);
+        Log::Warn(TAG, "product activate failure, status code: %d", status_code);
         return false;
     }
 

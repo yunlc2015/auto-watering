@@ -92,6 +92,14 @@ bool WateringApplication::OnPhysicalButtonEvent(const std::string& button_name, 
             return true;
         }
 
+    } else if (button_name == kBootButton) {
+
+        if (action == ButtonAction::LongPress) {
+            WateringConfig::GetInstance().Reset();
+            delay(200);
+            Reboot();
+            return true;
+        }
     }
 
     return Application::OnPhysicalButtonEvent(button_name, action);

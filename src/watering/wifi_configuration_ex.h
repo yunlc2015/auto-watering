@@ -24,7 +24,7 @@ protected:
     void StartWebServer() override;
 
 private:
-    bool ReadProductConfig(const std::string& platform_token, const std::string& serialno, int workmode);
+    bool ActivateProduct(const std::string& platform_token, const std::string& serialno, int workmode);
 
     WebServer *web_server_;
     TaskHandle_t web_task_handler_;
