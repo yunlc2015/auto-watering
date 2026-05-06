@@ -37,6 +37,10 @@ static const char *index_html PROGMEM = R"(
     <fieldset>
       <legend>产品配置</legend>
       <div class='row responsive-label'>
+        <div class='col-sm-12 col-md-3'><label for='serialno'>平台Token：</label></div>
+        <div class='col-sm-12 col-md'><input type='text' style='width:90%' name='platform_token'></div>
+      </div>
+      <div class='row responsive-label'>
         <div class='col-sm-12 col-md-3'><label for='serialno'>序列号：</label></div>
         <div class='col-sm-12 col-md'><input type='text' style='width:90%' name='serialno'></div>
       </div>

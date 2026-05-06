@@ -128,7 +128,7 @@ bool WifiConfigurationEx::ReadProductConfig(const std::string& platform_token, c
     Log::Info(TAG, "read product config, serialno: %s", serialno.c_str());
     
     // 获取项目配置信息
-    std::string config_url = PLATFORM_API_BASE "/app/config/get";
+    std::string config_url = PLATFORM_API_BASE "/product/activate";
     Log::Info(TAG, "access: %s", config_url.c_str());
 
     HTTPClient http;

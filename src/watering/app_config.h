@@ -4,9 +4,9 @@
 //////////////////////////////////////////////////////////////////////////////////
 // 特性
 
-#define PLATFORM_API_BASE                   "http://api.yunlc.com.cn/v1"
+#define PLATFORM_API_BASE                   "https://api.yunlc.com.cn/v1"
 #define PLATFORM_APP_ID                     "c0ce54cdb7bc4b4bb118cdfec4548f7f"
-#define PRODUCT_MODEL                       "esp32-mimi"
+#define PRODUCT_MODEL                       "iot-watering-suit"
 
 // 定时器
 #define CONFIG_USE_SW_TIMER                 1
